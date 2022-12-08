@@ -53,7 +53,7 @@ class ZMQServer:
         runner_process:mp.Process
         try:
             for runner_process in self.runner_processes:
-                runner_process.start()       
+                runner_process.start()      # add a mp.Event for runners and server in order to quit the server loop when runners failed to start 
             self.runners_started = True 
         except Exception as e:
             logger.error(e)
@@ -61,7 +61,7 @@ class ZMQServer:
     
     def submit_tasks(self, tasks:Tasks) -> Optional[TaskCacheResponse]:
         if not self.runners_started:
-            logger.warning('runners are not availables yet')
+            logger.warning('runners are not availables yet | call start_all_runners before submiting a task')
             return None  
 
         nb_tasks = len(tasks)

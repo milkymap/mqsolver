@@ -37,7 +37,7 @@ def concurrent_runner(path2source_dir:str, path2target_dir:str, nb_runners:int):
                 SwitchConfig(
                     service_name='image-processing',
                     solver_factory=lambda: ImageProcessingSolver(path2target_dir),
-                    nb_solvers=16,
+                    nb_solvers=1,
                     list_of_topics=['RESIZE', 'TOGRAY']
                 )
             ],

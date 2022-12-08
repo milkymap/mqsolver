@@ -40,7 +40,7 @@ class ZMQSolver:
         self.switch_solver_router_address = snd_address_settings.SWITCH_SOLVER_ROUTER
         self.switch2solver_publisher_address = snd_address_settings.SWITCH2SOLVER_PUBLISHER
     
-        self.solver_strategy:ABCSolver
+        self.solver_strategy:Optional[ABCSolver]=None 
         self.sockets_initialization:bool = False 
     
     def monitor_loop(self) -> bool:
@@ -94,15 +94,17 @@ class ZMQSolver:
                 
                 push_socket_status = self.switch2solver_pull_socket.poll(timeout=100)
                 if push_socket_status == zmq.POLLIN: 
-                    switch_encoded_message = self.switch2solver_pull_socket.recv()
-                    logger.debug(f'solver {self.solver_id:03d} has got a new task from {self.switch_id:03d}')
-                    switch_plain_message:SpecializedTask = pickle.loads(switch_encoded_message)
-                    X = perf_counter()
-                    response:SolverDataResponse = self.solver_strategy(switch_plain_message)
-                    D = perf_counter() - X 
-                    self.solver2target_push_socket.send_pyobj((self.service_name, response))       
-                    logger.debug(f'solver {self.solver_id:03d} has consumed the task {switch_plain_message.task_id} in {D:05.3f} seconds')
-                    nb_hits += 1
+                    if self.solver_strategy is not None:
+                        switch_encoded_message = self.switch2solver_pull_socket.recv()
+                        logger.debug(f'solver {self.solver_id:03d} has got a new task from {self.switch_id:03d}')
+                        switch_plain_message:SpecializedTask = pickle.loads(switch_encoded_message)
+                        X = perf_counter()
+                    
+                        response:SolverDataResponse = self.solver_strategy(switch_plain_message)
+                        D = perf_counter() - X 
+                        self.solver2target_push_socket.send_pyobj((self.service_name, response))       
+                        logger.debug(f'solver {self.solver_id:03d} has consumed the task {switch_plain_message.task_id} in {D:05.3f} seconds')
+                        nb_hits += 1
                 else:
                     logger.debug(f'solver {self.solver_id:03d} is waiting to get a new task from the switch {self.service_name}')
             except KeyboardInterrupt:
